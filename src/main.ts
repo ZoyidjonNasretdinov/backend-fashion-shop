@@ -6,28 +6,50 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // CORS sozlamalari (Flowers proektidagidek)
+  // Global prefix qo'shish
+  app.setGlobalPrefix('api');
+
+  // Asosiy sahifani Swagger hujjatlariga yo'naltirish
+  const server = app.getHttpServer();
+  app.use('/', (req, res, next) => {
+    if (req.path === '/' || req.path === '/api') {
+      return res.redirect('/api/docs');
+    }
+    next();
+  });
+
+  // CORS sozlamalari
   app.enableCors({
     origin: (origin, callback) => {
       const allowedOrigins = [
         /^http:\/\/localhost(:\d+)?$/,
+        /^http:\/\/127\.0\.0\.1(:\d+)?$/,
         /^https:\/\/.*\.vercel\.app$/,
         /^https:\/\/.*\.railway\.app$/,
       ];
-      if (!origin || allowedOrigins.some((regex) => regex.test(origin))) {
+
+      // Origin bo'lmasa (masalan, Postman yoki server-to-server) ruxsat beramiz
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      const isAllowed = allowedOrigins.some((regex) => regex.test(origin));
+      if (isAllowed) {
         callback(null, true);
       } else {
-        callback(null, true); // Test uchun barchasiga ruxsat beramiz
+        // Agar xavfsizlik juda muhim bo'lmasa, test davrida callback(null, true) qoldirish mumkin
+        // Lekin hozircha xatolik qaytaramiz yoki ehtiyojga qarab true qilamiz
+        callback(null, true); // Hozircha hamma originlarga ruxsat (test uchun)
       }
     },
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
     allowedHeaders: [
+      'Origin',
+      'X-Requested-With',
       'Content-Type',
       'Accept',
       'Authorization',
-      'X-Requested-With',
-      'X-HTTP-Method-Override',
       'x-auth-token',
     ],
     exposedHeaders: ['Set-Cookie', 'x-auth-token'],
@@ -94,6 +116,6 @@ Kiyim-kechak va moda marketplace API.
 
   const port = process.env.PORT || 5000;
   await app.listen(port, '0.0.0.0');
-  console.log(`🚀 Fashion Shop: http://0.0.0.0:${port}/api/docs`);
+  console.log(`🚀 Fashion Shop is running on: http://0.0.0.0:${port}/api/docs`);
 }
 bootstrap();
