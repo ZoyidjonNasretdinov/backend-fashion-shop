@@ -12,9 +12,13 @@ import { ClothingModule } from './clothing/clothing.module';
     ConfigModule.forRoot({ isGlobal: true }),
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        uri: configService.get<string>('MONGODB_URI'),
-      }),
+      useFactory: async (configService: ConfigService) => {
+        const uri = configService.get<string>('MONGODB_URI');
+        if (!uri) {
+          throw new Error('MONGODB_URI environment variable is not defined!');
+        }
+        return { uri };
+      },
       inject: [ConfigService],
     }),
     UsersModule,
