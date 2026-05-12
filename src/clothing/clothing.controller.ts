@@ -8,13 +8,21 @@ import {
   Delete,
   UseGuards,
   Request,
+  UseInterceptors,
+  UploadedFiles,
+  ParseFilePipe,
+  MaxFileSizeValidator,
+  FileTypeValidator,
 } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
   ApiResponse,
   ApiBearerAuth,
+  ApiConsumes,
+  ApiBody,
 } from '@nestjs/swagger';
+import { FilesInterceptor } from '@nestjs/platform-express';
 import { ClothingService } from './clothing.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -32,15 +40,35 @@ export class ClothingController {
   @ApiBearerAuth('access-token')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.SELLER, Role.ADMIN)
+  @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Yangi kiyim qo\'shish (Faqat SELLER yoki ADMIN)' })
-  create(@Body() createDto: CreateClothingDto, @Request() req: any) {
-    return this.clothingService.create(createDto, req.user.sub);
+  @UseInterceptors(FilesInterceptor('images', 10))
+  async create(
+    @Body() createDto: CreateClothingDto,
+    @Request() req: any,
+    @UploadedFiles(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 5 * 1024 * 1024 }),
+          new FileTypeValidator({ fileType: '.(png|jpeg|jpg|webp)' }),
+        ],
+      }),
+    )
+    files: Express.Multer.File[],
+  ) {
+    return this.clothingService.create(createDto, req.user.sub, files);
   }
 
   @Get()
   @ApiOperation({ summary: 'Barcha faol kiyimlarni ko\'rish' })
   findAll() {
     return this.clothingService.findAll();
+  }
+
+  @Get('landing')
+  @ApiOperation({ summary: 'Landing page uchun tasodifiy kiyimlar' })
+  getLanding() {
+    return this.clothingService.getLandingProducts();
   }
 
   @Get('my-products')

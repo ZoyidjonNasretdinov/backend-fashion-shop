@@ -25,11 +25,31 @@ export class AuthService {
       fullName: body.fullName,
       email: body.email,
       passwordHash,
-      role: body.role || Role.USER,
+      role: Role.USER, // Faqat USER ro'li bilan ro'yxatdan o'tish
     });
 
     await newUser.save();
     return { success: true, message: 'Muvaffaqiyatli ro\'yxatdan o\'tdingiz' };
+  }
+
+  async registerSeller(body: any) {
+    const existingUser = await this.userModel.findOne({ email: body.email });
+    if (existingUser) {
+      throw new ConflictException('Bu email avval ro\'yxatdan o\'tgan');
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(body.password, salt);
+
+    const newUser = new this.userModel({
+      fullName: body.fullName,
+      email: body.email,
+      passwordHash,
+      role: Role.SELLER, // Faqat ADMIN tomonidan SELLER ro'yxatdan o'tkaziladi
+    });
+
+    await newUser.save();
+    return { success: true, message: 'Sotuvchi muvaffaqiyatli ro\'yxatdan o\'tkazildi' };
   }
 
   async login(body: any) {

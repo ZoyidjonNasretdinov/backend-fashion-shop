@@ -90,9 +90,15 @@ Kiyim-kechak va moda marketplace API.
 | Bo'lim | Maqsad |
 |--------|--------|
 | 🔓 **Auth** | Kirish va Ro'yxatdan o'tish |
-| 👗 **Clothing** | Kiyimlar ro'yxati |
-| 🛡️ **Admin** | Foydalanuvchilarni boshqarish |
-| 📊 **Dashboard** | Statistika va Kabinet |
+| 👤 **Users** | Profil boshqaruv, avatar yuklash, parol o'zgartirish |
+| 👗 **Clothing** | Kiyimlar CRUD + rasm yuklash |
+| 📂 **Categories** | Kategoriyalar boshqaruvi |
+| 🏷️ **Brands** | Brendlar boshqaruvi |
+| 🛒 **Cart** | Savatcha (qo'shish, o'chirish) |
+| ❤️ **Wishlist** | Sevimlilar ro'yxati |
+| 📦 **Orders** | Buyurtmalar (berish, tasdiqlash, bekor qilish) |
+| ⭐ **Reviews** | Mahsulot baholash va sharhlar |
+| 📊 **Dashboard** | Admin va Seller statistikalari |
       `,
     )
     .setVersion('1.0')

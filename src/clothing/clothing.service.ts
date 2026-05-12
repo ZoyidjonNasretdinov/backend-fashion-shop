@@ -4,16 +4,29 @@ import { Model } from 'mongoose';
 import { Clothing } from './schemas/clothing.schema';
 import { CreateClothingDto } from './dto/create-clothing.dto';
 import { UpdateClothingDto } from './dto/update-clothing.dto';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
 
 @Injectable()
 export class ClothingService {
   constructor(
     @InjectModel(Clothing.name) private clothingModel: Model<Clothing>,
+    private readonly cloudinaryService: CloudinaryService,
   ) {}
 
-  async create(createDto: CreateClothingDto, sellerId: string) {
+  async create(
+    createDto: CreateClothingDto,
+    sellerId: string,
+    files: Express.Multer.File[],
+  ) {
+    const uploadResults = await Promise.all(
+      files.map((file) => this.cloudinaryService.uploadFile(file, 'clothing')),
+    );
+
+    const imageUrls = uploadResults.map((result) => result.secure_url);
+
     const newClothing = new this.clothingModel({
       ...createDto,
+      images: imageUrls,
       sellerId,
     });
     return await newClothing.save();
@@ -21,6 +34,28 @@ export class ClothingService {
 
   async findAll() {
     return await this.clothingModel.find({ isActive: true }).populate('sellerId', 'fullName email');
+  }
+
+  async getLandingProducts() {
+    // Tasodifiy 8 ta faol mahsulotni tanlash
+    return await this.clothingModel.aggregate([
+      { $match: { isActive: true } },
+      { $sample: { size: 8 } },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'sellerId',
+          foreignField: '_id',
+          as: 'seller',
+        },
+      },
+      { $unwind: '$seller' },
+      {
+        $project: {
+          'seller.passwordHash': 0,
+        },
+      },
+    ]);
   }
 
   async findOne(id: string) {

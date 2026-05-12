@@ -18,11 +18,17 @@ export class Clothing extends Document {
   @Prop({ required: true })
   description: string;
 
-  @Prop({ required: true })
-  imageUrl: string;
+  @Prop({ type: [String], required: true })
+  images: string[];
+
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'Category', required: true })
+  categoryId: string;
 
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'User', required: true })
   sellerId: string;
+
+  @Prop({ default: 0 })
+  discount: number;
 
   @Prop({ default: true })
   isActive: boolean;

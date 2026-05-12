@@ -27,8 +27,20 @@ export class CreateClothingDto {
   @IsNotEmpty()
   description: string;
 
-  @ApiProperty({ example: 'https://example.com/image.jpg', description: 'Kiyim rasmi URL' })
-  @IsUrl()
+  @ApiProperty({ example: '65b2a...', description: 'Kategoriya IDsi' })
+  @IsString()
   @IsNotEmpty()
-  imageUrl: string;
+  categoryId: string;
+
+  @ApiProperty({
+    type: 'array',
+    items: { type: 'string', format: 'binary' },
+    description: 'Kiyim rasmlari (bir nechta)',
+  })
+  images: any[];
+
+  @ApiProperty({ example: 10, description: 'Chegirma foizi', required: false })
+  @IsNumber()
+  @IsOptional()
+  discount?: number;
 }
