@@ -41,6 +41,7 @@ export class ClothingController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.SELLER, Role.ADMIN)
   @ApiConsumes('multipart/form-data')
+  @ApiBody({ type: CreateClothingDto })
   @ApiOperation({ summary: 'Yangi kiyim qo\'shish (Faqat SELLER yoki ADMIN)' })
   @UseInterceptors(FilesInterceptor('images', 10))
   async create(

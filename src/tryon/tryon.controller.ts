@@ -16,15 +16,12 @@ export class TryonController {
 
   @Post(':productId')
   @ApiOperation({
-    summary: 'Virtual kiyim sinab ko\'rish (AI) — darhol jobId qaytaradi',
+    summary: 'Virtual kiyim sinab ko\'rish (AI) — tayyor rasm URL manzilini qaytaradi',
     description: `
 **Ishlash tartibi:**
 1. Rasmingizni yuklang va productId bering
-2. Darhol \`jobId\` qaytariladi (~1 soniya)
-3. \`GET /tryon/status/{jobId}\` orqali natijani kuzating
-4. \`status: "done"\` bo'lganda \`resultImageUrl\` tayyor
-
-> ⏱️ AI qayta ishlash odatda **1-3 daqiqa** oladi (HuggingFace shared GPU).
+2. AI rasmni qayta ishlaydi va kiyimni kiyintiradi
+3. Tayyor rasm URL manzilini darhol qaytaradi (Sinxron)
     `,
   })
   @ApiConsumes('multipart/form-data')
@@ -52,35 +49,5 @@ export class TryonController {
     file: Express.Multer.File,
   ) {
     return this.tryonService.startTryOn(productId, file);
-  }
-
-  @Get('status/:jobId')
-  @ApiOperation({
-    summary: 'Try-on natijasini tekshirish',
-    description: `
-**Status qiymatlari:**
-- \`processing\` — AI hali ishlayapti
-- \`done\` — Tayyor! \`resultImageUrl\` da natija bor
-- \`error\` — Xatolik yuz berdi
-    `,
-  })
-  @ApiParam({ name: 'jobId', description: 'startTryOn dan olingan job ID' })
-  getStatus(@Param('jobId') jobId: string) {
-    return this.tryonService.getJobStatus(jobId);
-  }
-
-  @Get('view/:jobId')
-  @ApiOperation({ summary: 'Natija rasmini to\'g\'ridan-to\'g\'ri ko\'rish (Redirect)' })
-  @ApiParam({ name: 'jobId', description: 'startTryOn dan olingan job ID' })
-  async viewImage(@Param('jobId') jobId: string, @Res() res: any) {
-    const job = this.tryonService.getJobStatus(jobId);
-    if (job.status === 'done' && job.resultImageUrl) {
-      return res.redirect(job.resultImageUrl);
-    }
-    return res.status(202).json({
-      message: 'Rasm hali tayyor emas yoki xatolik yuz berdi',
-      status: job.status,
-      error: job.error,
-    });
   }
 }

@@ -30,6 +30,26 @@ export class CloudinaryService {
     });
   }
 
+  async uploadBase64(
+    base64Data: string,
+    folder: string = 'tryon-results',
+  ): Promise<CloudinaryResponse> {
+    return new Promise<CloudinaryResponse>((resolve, reject) => {
+      cloudinary.uploader.upload(
+        base64Data,
+        {
+          folder: folder,
+          resource_type: 'auto',
+        },
+        (error, result) => {
+          if (error) return reject(error);
+          if (!result) return reject(new Error('Cloudinary upload failed'));
+          resolve(result);
+        },
+      );
+    });
+  }
+
   async deleteFile(publicId: string): Promise<any> {
     return new Promise((resolve, reject) => {
       cloudinary.uploader.destroy(publicId, (error, result) => {

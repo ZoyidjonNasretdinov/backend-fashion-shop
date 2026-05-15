@@ -1,62 +1,57 @@
-import mongoose from 'mongoose';
-import * as bcrypt from 'bcrypt';
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+import { AuthService } from './auth/auth.service';
+import { Role } from './users/schemas/user.schema';
+import { getModelToken } from '@nestjs/mongoose';
+import { User } from './users/schemas/user.schema';
+import { Model } from 'mongoose';
 
-enum Role {
-  USER = 'USER',
-  ADMIN = 'ADMIN',
-  SELLER = 'SELLER',
-}
+async function bootstrap() {
+  const app = await NestFactory.createApplicationContext(AppModule);
+  const authService = app.get(AuthService);
+  const userModel = app.get<Model<User>>(getModelToken(User.name));
 
-const MONGODB_URI = 'mongodb+srv://kamronbeksodiqjonon_db_user:BTvK35H9jVljCRWE@cluster0.4nvyfku.mongodb.net/?appName=Cluster0';
+  console.log('🚀 Seeding users...');
 
-async function seed() {
-  try {
-    await mongoose.connect(MONGODB_URI);
-    console.log('Connected to MongoDB');
+  const users = [
+    {
+      fullName: 'Asosiy Admin',
+      email: 'admin@fashionshop.uz',
+      password: 'admin123',
+      role: Role.ADMIN,
+    },
+    {
+      fullName: 'Sifatli Kiyimlar Seller',
+      email: 'seller@fashionshop.uz',
+      password: 'seller123',
+      role: Role.SELLER,
+    },
+  ];
 
-    const UserSchema = new mongoose.Schema({
-      fullName: String,
-      email: String,
-      passwordHash: String,
-      role: String,
-    }, { timestamps: true });
-
-    // NestJS defaults to lowercase collection names with an 's' suffix
-    const User = mongoose.model('User', UserSchema, 'users');
-
-    const users = [
-      { fullName: 'System Admin', email: 'admin@fashion.com', password: 'admin123', role: Role.ADMIN },
-      { fullName: 'Fashion Seller', email: 'seller@fashion.com', password: 'seller123', role: Role.SELLER },
-      { fullName: 'Standard User', email: 'user@fashion.com', password: 'user123', role: Role.USER },
-    ];
-
-    for (const u of users) {
-      const existing = await User.findOne({ email: u.email });
-      if (existing) {
-        console.log(`User ${u.email} already exists`);
-        continue;
-      }
-
-      const salt = await bcrypt.genSalt(10);
-      const passwordHash = await bcrypt.hash(u.password, salt);
-
-      const newUser = new User({
-        fullName: u.fullName,
-        email: u.email,
-        passwordHash,
-        role: u.role,
+  for (const userData of users) {
+    const exists = await userModel.findOne({ email: userData.email });
+    if (!exists) {
+      // Manually hash if service doesn't allow role override in register
+      // But we modified registerSeller in previous turn, so let's use it or direct creation
+      await authService.registerSeller({
+        fullName: userData.fullName,
+        email: userData.email,
+        password: userData.password,
       });
-
-      await newUser.save();
-      console.log(`Created ${u.role}: ${u.email} / ${u.password}`);
+      
+      // If it was admin, we need to manually update the role since registerSeller sets SELLER
+      if (userData.role === Role.ADMIN) {
+        await userModel.updateOne({ email: userData.email }, { role: Role.ADMIN });
+      }
+      
+      console.log(`✅ Created ${userData.role}: ${userData.email}`);
+    } else {
+      console.log(`ℹ️ User ${userData.email} already exists.`);
     }
-
-    console.log('Seeding completed!');
-  } catch (error) {
-    console.error('Seeding failed:', error);
-  } finally {
-    await mongoose.disconnect();
   }
+
+  console.log('✨ Seeding completed!');
+  await app.close();
 }
 
-seed();
+bootstrap();
